@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Thanksgiving Orders</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#fbf6ef; --card:#ffffff; --ink:#2b1d14; --muted:#7a6a5d; --line:#eadfd2;
+    --pumpkin:#d9622b; --pumpkin-d:#b54d1d; --cran:#9e2a3a; --sage:#4f7a5a; --gold:#e3a72f;
+    --new:#d9622b; --cooking:#e3a72f; --ready:#4f7a5a;
+    --r:14px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"DM Sans",system-ui,sans-serif;font-size:16px}
+  button{font:inherit;cursor:pointer;border:none}
+  header{position:sticky;top:0;z-index:5;background:var(--ink);color:#fff;padding:12px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  header h1{font-family:Fraunces,serif;font-weight:800;font-size:1.35rem;margin:0;letter-spacing:.2px}
+  header h1 span{color:var(--gold)}
+  .tabs{display:flex;gap:6px;margin-left:auto;background:#ffffff14;padding:4px;border-radius:999px}
+  .tabs a{color:#fff;text-decoration:none;padding:8px 16px;border-radius:999px;font-weight:700;font-size:.95rem}
+  .tabs a.on{background:var(--pumpkin)}
+  .status{font-size:.8rem;color:#e9dccd;width:100%;}
+  .status:empty{display:none}
+  main{max-width:1200px;margin:0 auto;padding:18px}
+  .hidden{display:none!important}
+
+  /* ORDER VIEW */
+  .order-wrap{display:grid;grid-template-columns:1fr 360px;gap:18px;align-items:start}
+  @media (max-width:860px){.order-wrap{grid-template-columns:1fr}}
+  .section-title{font-family:Fraunces,serif;font-size:1.15rem;margin:4px 0 10px}
+  .menu{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
+  .item{background:var(--card);border:2px solid var(--line);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:6px;transition:border-color .15s}
+  .item.picked{border-color:var(--pumpkin)}
+  .item .name{font-weight:700;font-size:1.05rem}
+  .item .meta{color:var(--muted);font-size:.85rem}
+  .item .row{display:flex;align-items:center;justify-content:space-between;margin-top:auto;padding-top:6px}
+  .price{font-weight:700;color:var(--pumpkin-d)}
+  .qty{display:flex;align-items:center;gap:8px}
+  .qty button{width:38px;height:38px;border-radius:10px;background:#f3e8db;color:var(--ink);font-size:1.3rem;font-weight:700}
+  .qty button.plus{background:var(--pumpkin);color:#fff}
+  .qty span{min-width:20px;text-align:center;font-weight:700;font-size:1.1rem}
+  .cat{grid-column:1/-1;font-size:.8rem;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);font-weight:700;margin-top:6px}
+
+  .ticket{background:var(--card);border-radius:var(--r);border:1px solid var(--line);padding:16px;position:sticky;top:80px}
+  .ticket label{display:block;font-weight:700;font-size:.85rem;margin:10px 0 4px}
+  .ticket input[type=text],.ticket textarea{width:100%;padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;font:inherit;background:#fffdfa}
+  .ticket textarea{min-height:60px;resize:vertical}
+  .lines{margin:10px 0;padding:0;list-style:none;font-size:.95rem}
+  .lines li{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px dashed var(--line)}
+  .lines .empty{color:var(--muted);border:none}
+  .total{display:flex;justify-content:space-between;font-weight:800;font-size:1.2rem;margin:10px 0}
+  .check{display:flex;align-items:center;gap:8px;font-weight:500;margin:8px 0}
+  .check input{width:20px;height:20px;accent-color:var(--sage)}
+  .btn{background:var(--pumpkin);color:#fff;padding:14px;border-radius:12px;font-weight:700;width:100%;font-size:1.05rem}
+  .btn:disabled{background:#d8cabb;cursor:not-allowed}
+  .btn.ghost{background:transparent;color:var(--muted);padding:8px;font-size:.9rem;font-weight:500}
+  .msg{font-size:.9rem;margin-top:8px;min-height:1.2em}
+  .msg.ok{color:var(--sage)} .msg.err{color:var(--cran)}
+
+  .recent{margin-top:24px}
+  .recent-list{display:grid;gap:8px}
+  .r-row{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .r-row .who{font-weight:700}
+  .r-row .what{color:var(--muted);font-size:.88rem;flex:1;min-width:180px}
+  .chip{font-size:.75rem;font-weight:700;padding:4px 10px;border-radius:999px;color:#fff;text-transform:uppercase;letter-spacing:.6px}
+  .chip.new{background:var(--new)} .chip.cooking{background:var(--cooking);color:var(--ink)} .chip.ready{background:var(--ready)} .chip.served{background:#a99a8c}
+  .mini{background:#f3e8db;color:var(--ink);padding:7px 12px;border-radius:9px;font-weight:700;font-size:.85rem}
+  .mini.go{background:var(--sage);color:#fff}
+  .mini.warn{background:#f6dcdc;color:var(--cran)}
+  .paid{font-size:.75rem;font-weight:700;color:var(--sage)}
+  .unpaid{font-size:.75rem;font-weight:700;color:var(--cran)}
+
+  /* KITCHEN VIEW */
+  .k-top{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+  .tally{display:flex;gap:8px;flex-wrap:wrap;flex:1}
+  .tally .t{background:var(--ink);color:#fff;border-radius:10px;padding:8px 12px;font-weight:700;font-size:.95rem}
+  .tally .t b{color:var(--gold);font-size:1.1rem;margin-right:4px}
+  .tally .none{color:var(--muted)}
+  .board{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;align-items:start}
+  @media (max-width:900px){.board{grid-template-columns:1fr}}
+  .col h2{font-family:Fraunces,serif;font-size:1.1rem;margin:0 0 10px;display:flex;align-items:center;gap:8px}
+  .col h2 .dot{width:12px;height:12px;border-radius:50%}
+  .col h2 .n{background:#00000012;border-radius:999px;padding:1px 9px;font-size:.85rem;font-family:"DM Sans"}
+  .card{background:var(--card);border-radius:var(--r);border-left:6px solid var(--new);padding:14px;margin-bottom:12px;box-shadow:0 1px 3px #2b1d1412}
+  .card.cooking{border-left-color:var(--cooking)} .card.ready{border-left-color:var(--ready)}
+  .card.flash{animation:flash 1.2s ease 3}
+  @keyframes flash{50%{background:#ffe6d4}}
+  .card .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+  .card .guest{font-weight:800;font-size:1.2rem}
+  .card .age{color:var(--muted);font-size:.85rem;white-space:nowrap}
+  .card .age.late{color:var(--cran);font-weight:700}
+  .card ul{list-style:none;padding:0;margin:10px 0}
+  .card li{font-size:1.1rem;padding:3px 0}
+  .card li b{display:inline-block;min-width:34px;color:var(--pumpkin-d)}
+  .card .note{background:#fff5d9;border-radius:8px;padding:8px 10px;font-size:.92rem;margin-bottom:10px}
+  .card .actions{display:flex;gap:8px}
+  .card .actions button{flex:1;padding:12px;border-radius:10px;font-weight:700;font-size:1rem;color:#fff;background:var(--cooking)}
+  .card .actions button.ready{background:var(--ready)}
+  .card .actions button.back{flex:0 0 auto;background:#f3e8db;color:var(--muted);padding:12px 14px}
+  .emptycol{color:var(--muted);font-size:.92rem;padding:16px;border:2px dashed var(--line);border-radius:var(--r);text-align:center}
+  .sound{background:#f3e8db;color:var(--ink);padding:9px 14px;border-radius:10px;font-weight:700;font-size:.9rem}
+  .sound.on{background:var(--sage);color:#fff}
+  .notice{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:16px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Thanksgiving <span>Orders</span></h1>
+  <nav class="tabs">
+    <a href="#order" id="tab-order">Take orders</a>
+    <a href="#kitchen" id="tab-kitchen">Chef's kitchen</a>
+  </nav>
+  <div class="status" id="status">Connecting…</div>
+</header>
+
+<main>
+  <div class="notice hidden" id="notice"></div>
+
+  <!-- ORDER VIEW -->
+  <section id="view-order">
+    <div class="order-wrap">
+      <div>
+        <h2 class="section-title">Menu</h2>
+        <div class="menu" id="menu"></div>
+      </div>
+      <aside class="ticket">
+        <h2 class="section-title" style="margin-top:0">New order</h2>
+        <label for="guest">Guest name</label>
+        <input type="text" id="guest" placeholder="Who is this for?" maxlength="40" autocomplete="off">
+        <ul class="lines" id="lines"></ul>
+        <div class="total"><span>Total</span><span id="total">$0.00</span></div>
+        <label for="notes">Notes for the chef</label>
+        <textarea id="notes" placeholder="Extra spicy, no nuts, etc." maxlength="200"></textarea>
+        <label class="check"><input type="checkbox" id="paid"> Paid already</label>
+        <button class="btn" id="send" disabled>Send to kitchen</button>
+        <button class="btn ghost" id="clear">Clear order</button>
+        <div class="msg" id="msg"></div>
+      </aside>
+    </div>
+
+    <div class="recent">
+      <h2 class="section-title">Orders</h2>
+      <div class="recent-list" id="recent"></div>
+    </div>
+  </section>
+
+  <!-- KITCHEN VIEW -->
+  <section id="view-kitchen" class="hidden">
+    <div class="k-top">
+      <div class="tally" id="tally"></div>
+      <button class="sound" id="sound">🔔 Turn on sound</button>
+    </div>
+    <div class="board">
+      <div class="col"><h2><span class="dot" style="background:var(--new)"></span>New <span class="n" id="n-new">0</span></h2><div id="col-new"></div></div>
+      <div class="col"><h2><span class="dot" style="background:var(--cooking)"></span>Cooking <span class="n" id="n-cooking">0</span></h2><div id="col-cooking"></div></div>
+      <div class="col"><h2><span class="dot" style="background:var(--ready)"></span>Ready to serve <span class="n" id="n-ready">0</span></h2><div id="col-ready"></div></div>
+    </div>
+  </section>
+</main>
+
+<script type="module">
+/* =====================================================
+   Firebase config for project-thanksgiving (see README.md)
+   ===================================================== */
+const firebaseConfig = {
+  apiKey: "AIzaSyAcna_qmUotZbtCUA5ts8-d5a1-oVhCWhg",
+  authDomain: "project-thanksgiving.firebaseapp.com",
+  projectId: "project-thanksgiving",
+  storageBucket: "project-thanksgiving.firebasestorage.app",
+  messagingSenderId: "251211307687",
+  appId: "1:251211307687:web:0776add11a8dffc087d982"
+};
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, doc, setDoc, updateDoc, deleteDoc, onSnapshot }
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const MENU = [
+  {id:"chicken65",  cat:"Mains",    name:"Chicken 65",          price:15, unit:"serving",         note:"6–8 bite-size pieces"},
+  {id:"drumsticks", cat:"Mains",    name:"Chicken drumsticks",  price:14, unit:"2-piece serving", note:"2 drumsticks"},
+  {id:"biryani",    cat:"Mains",    name:"Chicken biryani",     price:24, unit:"serving",         note:"16–20 oz, raita included"},
+  {id:"friedrice",  cat:"Mains",    name:"Egg fried rice",      price:15, unit:"serving",         note:"About 16 oz"},
+  {id:"noodles",    cat:"Mains",    name:"Vegetable noodles",   price:15, unit:"serving",         note:"About 16 oz"},
+  {id:"icecream",   cat:"Desserts", name:"Ice cream",           price:7,  unit:"2 scoops",        note:"Cup with toppings"},
+  {id:"lavacake",   cat:"Desserts", name:"Chocolate lava cake", price:12, unit:"cake",            note:"Individual cake"},
+  {id:"softdrink",  cat:"Drinks",   name:"Soft drinks",         price:4,  unit:"can/bottle",      note:"One serving"},
+  {id:"mocktail",   cat:"Drinks",   name:"Mocktails",           price:10, unit:"12–16 oz glass",  note:"Non-alcoholic"}
+];
+const $ = s => document.querySelector(s);
+const money = n => "$" + n.toFixed(2);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+let cart = {};          // id -> qty
+let orders = [];        // live from db
+let ordersRef = null;
+let canWrite = true;
+let seenIds = null;     // for new-order flash/sound
+let soundOn = false, audioCtx = null;
+let busy = new Set();   // doc ids with a write in flight
+
+/* ---------- views ---------- */
+function showView(){
+  const v = location.hash === "#kitchen" ? "kitchen" : "order";
+  $("#view-order").classList.toggle("hidden", v !== "order");
+  $("#view-kitchen").classList.toggle("hidden", v !== "kitchen");
+  $("#tab-order").classList.toggle("on", v === "order");
+  $("#tab-kitchen").classList.toggle("on", v === "kitchen");
+}
+window.addEventListener("hashchange", showView);
+showView();
+
+/* ---------- menu + cart ---------- */
+function renderMenu(){
+  let html = "", lastCat = "";
+  for (const m of MENU){
+    if (m.cat !== lastCat){ html += `<div class="cat">${m.cat}</div>`; lastCat = m.cat; }
+    const q = cart[m.id] || 0;
+    html += `<div class="item ${q ? "picked" : ""}">
+      <div class="name">${esc(m.name)}</div>
+      <div class="meta">${esc(m.unit)} · ${esc(m.note)}</div>
+      <div class="row"><span class="price">${money(m.price)}</span>
+        <div class="qty">
+          <button data-minus="${m.id}" aria-label="Remove one ${esc(m.name)}">−</button>
+          <span>${q}</span>
+          <button class="plus" data-plus="${m.id}" aria-label="Add one ${esc(m.name)}">+</button>
+        </div></div></div>`;
+  }
+  $("#menu").innerHTML = html;
+}
+$("#menu").addEventListener("click", e => {
+  const p = e.target.closest("[data-plus]"), m = e.target.closest("[data-minus]");
+  if (p){ cart[p.dataset.plus] = (cart[p.dataset.plus] || 0) + 1; }
+  else if (m){ const id = m.dataset.minus; if (cart[id]) { cart[id]--; if (!cart[id]) delete cart[id]; } }
+  else return;
+  renderMenu(); renderTicket();
+});
+
+function cartLines(){
+  return MENU.filter(m => cart[m.id]).map(m => ({id:m.id, name:m.name, qty:cart[m.id], price:m.price}));
+}
+function renderTicket(){
+  const lines = cartLines();
+  $("#lines").innerHTML = lines.length
+    ? lines.map(l => `<li><span>${l.qty} × ${esc(l.name)}</span><span>${money(l.qty*l.price)}</span></li>`).join("")
+    : `<li class="empty">Tap + on the menu to add items.</li>`;
+  const total = lines.reduce((s,l) => s + l.qty*l.price, 0);
+  $("#total").textContent = money(total);
+  $("#send").disabled = !lines.length || !$("#guest").value.trim() || !ordersRef || !canWrite;
+}
+$("#guest").addEventListener("input", renderTicket);
+$("#clear").addEventListener("click", () => { cart = {}; $("#guest").value = ""; $("#notes").value = ""; $("#paid").checked = false; $("#msg").textContent = ""; renderMenu(); renderTicket(); });
+
+function setMsg(t, kind){ const el = $("#msg"); el.textContent = t; el.className = "msg " + (kind || ""); }
+
+$("#send").addEventListener("click", async () => {
+  const lines = cartLines(), guest = $("#guest").value.trim();
+  if (!lines.length || !guest || !ordersRef) return;
+  const body = {
+    guest, items: lines, notes: $("#notes").value.trim(),
+    total: lines.reduce((s,l) => s + l.qty*l.price, 0),
+    paid: $("#paid").checked, status: "new", createdAt: Date.now(), updatedAt: Date.now()
+  };
+  $("#send").disabled = true;
+  try {
+    await ordersRef.doc().set(body);
+    setMsg(`Sent ${guest}'s order to the kitchen.`, "ok");
+    cart = {}; $("#guest").value = ""; $("#notes").value = ""; $("#paid").checked = false;
+    renderMenu(); renderTicket();
+  } catch (err) {
+    handleWriteError(err, "Couldn't send that order.");
+    renderTicket();
+  }
+});
+
+/* ---------- order list (order view) ---------- */
+function summary(o){ return (o.items || []).map(i => `${i.qty}× ${i.name}`).join(", "); }
+function renderRecent(){
+  const list = [...orders].sort((a,b) => (b.createdAt||0) - (a.createdAt||0));
+  if (!list.length){ $("#recent").innerHTML = `<div class="emptycol">No orders yet.</div>`; return; }
+  $("#recent").innerHTML = list.map(o => {
+    const st = o.status || "new";
+    let act = "";
+    if (canWrite){
+      if (st === "ready") act += `<button class="mini go" data-act="served" data-id="${o.id}">Mark served</button>`;
+      act += `<button class="mini" data-act="togglePaid" data-id="${o.id}">${o.paid ? "Mark unpaid" : "Mark paid"}</button>`;
+      if (st === "new") act += `<button class="mini warn" data-act="cancel" data-id="${o.id}">Cancel</button>`;
+    }
+    return `<div class="r-row">
+      <span class="chip ${st}">${st === "ready" ? "Ready!" : st}</span>
+      <span class="who">${esc(o.guest)}</span>
+      <span class="what">${esc(summary(o))}</span>
+      <span>${money(Number(o.total)||0)}</span>
+      <span class="${o.paid ? "paid" : "unpaid"}">${o.paid ? "PAID" : "UNPAID"}</span>
+      ${act}</div>`;
+  }).join("");
+}
+
+/* ---------- kitchen ---------- */
+function ago(t){
+  const m = Math.floor((Date.now() - t) / 60000);
+  return m < 1 ? "just now" : m === 1 ? "1 min ago" : `${m} min ago`;
+}
+function renderKitchen(newIds){
+  const open = orders.filter(o => ["new","cooking","ready"].includes(o.status || "new"))
+                     .sort((a,b) => (a.createdAt||0) - (b.createdAt||0));
+  // tally of everything still to cook
+  const need = {};
+  for (const o of open) if ((o.status||"new") !== "ready")
+    for (const i of o.items || []) need[i.name] = (need[i.name] || 0) + (Number(i.qty)||0);
+  const keys = MENU.map(m => m.name).filter(n => need[n]).concat(Object.keys(need).filter(n => !MENU.some(m => m.name === n)));
+  $("#tally").innerHTML = keys.length
+    ? `<span class="none" style="align-self:center;font-weight:700">To cook:</span>` + keys.map(n => `<span class="t"><b>${need[n]}</b>${esc(n)}</span>`).join("")
+    : `<span class="none">Nothing to cook right now.</span>`;
+
+  for (const st of ["new","cooking","ready"]){
+    const here = open.filter(o => (o.status||"new") === st);
+    $("#n-" + st).textContent = here.length;
+    $("#col-" + st).innerHTML = here.length ? here.map(o => {
+      const late = st !== "ready" && Date.now() - (o.createdAt||0) > 20*60000;
+      let btns = "";
+      if (canWrite){
+        if (st === "new") btns = `<button data-act="cooking" data-id="${o.id}">Start cooking</button>`;
+        if (st === "cooking") btns = `<button class="back" data-act="new" data-id="${o.id}" title="Move back to New">↩</button><button class="ready" data-act="ready" data-id="${o.id}">Done, ready</button>`;
+        if (st === "ready") btns = `<button class="back" data-act="cooking" data-id="${o.id}" title="Move back to Cooking">↩</button><button class="ready" data-act="served" data-id="${o.id}">Served</button>`;
+      }
+      return `<div class="card ${st} ${newIds && newIds.has(o.id) ? "flash" : ""}">
+        <div class="top"><span class="guest">${esc(o.guest)}</span><span class="age ${late ? "late" : ""}">${ago(o.createdAt||Date.now())}</span></div>
+        <ul>${(o.items||[]).map(i => `<li><b>${Number(i.qty)||0}×</b>${esc(i.name)}</li>`).join("")}</ul>
+        ${o.notes ? `<div class="note">📝 ${esc(o.notes)}</div>` : ""}
+        <div class="actions">${btns}</div></div>`;
+    }).join("") : `<div class="emptycol">${st === "new" ? "Waiting for orders…" : "Nothing here."}</div>`;
+  }
+}
+
+/* ---------- actions ---------- */
+document.addEventListener("click", async e => {
+  const b = e.target.closest("[data-act]");
+  if (!b || !ordersRef) return;
+  const id = b.dataset.id, act = b.dataset.act;
+  if (busy.has(id)) return;
+  const o = orders.find(x => x.id === id); if (!o) return;
+  busy.add(id); b.disabled = true;
+  try {
+    const ref = ordersRef.doc(id);
+    if (act === "cancel") await ref.delete();
+    else if (act === "togglePaid") await ref.update({paid: !o.paid, updatedAt: Date.now()});
+    else await ref.update({status: act, updatedAt: Date.now()});
+  } catch (err) {
+    handleWriteError(err, "That change didn't save.");
+  } finally { busy.delete(id); b.disabled = false; }
+});
+
+function handleWriteError(err, fallback){
+  if (err && err.code === "permission-denied"){ setMsg("Firebase blocked that write. Check the Firestore rules (see README.md).", "err"); }
+  else if (err && err.code === "resource-exhausted") setMsg("Firebase free limit reached for today. Try again later.", "err");
+  else setMsg(fallback + " Try again.", "err");
+}
+
+/* ---------- sound ---------- */
+$("#sound").addEventListener("click", async () => {
+  soundOn = !soundOn;
+  if (soundOn){
+    try { audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)(); await audioCtx.resume(); beep(); }
+    catch { soundOn = false; }
+  }
+  $("#sound").classList.toggle("on", soundOn);
+  $("#sound").textContent = soundOn ? "🔔 Sound on" : "🔔 Turn on sound";
+});
+function beep(){
+  if (!soundOn || !audioCtx) return;
+  try {
+    const t = audioCtx.currentTime;
+    [880, 1175].forEach((f, i) => {
+      const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+      o.frequency.value = f; o.type = "sine";
+      g.gain.setValueAtTime(0.0001, t + i*0.18); g.gain.exponentialRampToValueAtTime(0.3, t + i*0.18 + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + i*0.18 + 0.16);
+      o.connect(g).connect(audioCtx.destination); o.start(t + i*0.18); o.stop(t + i*0.18 + 0.18);
+    });
+  } catch {}
+}
+
+/* ---------- status ---------- */
+function setStatus(t){ $("#status").textContent = t; }
+function renderAll(newIds){ renderTicket(); renderRecent(); renderKitchen(newIds); }
+
+renderMenu(); renderTicket(); renderRecent(); renderKitchen();
+setInterval(() => { if (location.hash === "#kitchen") renderKitchen(); }, 30000);
+
+/* ---------- connect (Firebase Firestore) ---------- */
+(() => {
+  if (!firebaseConfig.projectId || firebaseConfig.projectId === "PASTE_HERE"){
+    setStatus("");
+    const n = $("#notice"); n.classList.remove("hidden");
+    n.textContent = "Setup needed: paste your Firebase config at the top of the script in index.html (see README.md). Until then, orders won't sync.";
+    return;
+  }
+  const app = initializeApp(firebaseConfig);
+  const fdb = getFirestore(app);
+  const col = collection(fdb, "orders");
+
+  // Small wrapper so the rest of the app can call ordersRef.doc().set(), .update(), .delete()
+  ordersRef = {
+    doc(id){
+      const ref = id ? doc(fdb, "orders", id) : doc(col);
+      return {
+        set: data => setDoc(ref, data),
+        update: data => updateDoc(ref, data),
+        delete: () => deleteDoc(ref)
+      };
+    }
+  };
+
+  let loaded = false;
+  const timer = setTimeout(() => { if (!loaded) setStatus("Still connecting. Orders may not be up to date yet."); }, 10000);
+  onSnapshot(col, { includeMetadataChanges: true }, snap => {
+    const next = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    let newIds = null;
+    if (seenIds){
+      newIds = new Set(next.filter(o => !seenIds.has(o.id)).map(o => o.id));
+      if (newIds.size && location.hash === "#kitchen" && !snap.metadata.hasPendingWrites) beep();
+    }
+    seenIds = new Set(next.map(o => o.id));
+    orders = next;
+    if (!snap.metadata.fromCache){ loaded = true; clearTimeout(timer); setStatus(""); }
+    renderAll(newIds);
+  }, err => {
+    clearTimeout(timer);
+    setStatus(err && err.code === "permission-denied"
+      ? "Firebase blocked this. Check the Firestore rules (see README.md)."
+      : "Lost the connection to orders. Reload the page to reconnect.");
+  });
+})();
+</script>
+</body>
+</html>
